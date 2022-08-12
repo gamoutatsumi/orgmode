@@ -18,6 +18,13 @@ function Export.prompt()
               return Export.emacs(org_cmd, extension)
             end,
           },
+          {
+            label = string.format('emacsclient (%s)', org_cmd),
+            key = 'c',
+            action = function()
+              return Export.emacsclient(org_cmd, extension)
+            end,
+          },
         }
         if additional_opts then
           opts = utils.concat(opts, additional_opts)
@@ -125,6 +132,34 @@ function Export.emacs(format, extension)
   return Export._exporter(cmd, target, nil, function(err)
     table.insert(err, '')
     table.insert(err, 'NOTE: Emacs export issues are most likely caused by bad or missing emacs configuration.')
+    return utils.echo_error(string.format('Export error:\n%s', table.concat(err, '\n')))
+  end)
+end
+
+function Export.emacsclient(format, extension)
+  local file = utils.current_file_path()
+  local target = vim.fn.fnamemodify(file, ':p:r') .. '.' .. extension
+  local emacs_client = 'emacsclient'
+  if vim.fn.executable(emacs_client) ~= 1 then
+    return utils.echo_error('emacsclient executable not found. Make sure emacsclient is in $PATH.')
+  end
+
+  local s_expr = {
+    string.format('(find-file "%s")', file),
+    string.format('(%s)', format),
+    '(kill-buffer (current-buffer))'
+  }
+
+  local cmd = {
+    emacs_client,
+    '--no-wait',
+    '--eval',
+    unpack(s_expr)
+  }
+
+  return Export._exporter(cmd, target, nil, function(err)
+    table.insert(err, '')
+    table.insert(err, 'NOTE: Emacs export issues are most likely caused my bad or missing emacs configulation.')
     return utils.echo_error(string.format('Export error:\n%s', table.concat(err, '\n')))
   end)
 end
