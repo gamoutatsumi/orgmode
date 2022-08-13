@@ -153,6 +153,7 @@ function Export.emacsclient(format, extension)
   local cmd = {
     emacs_client,
     '--no-wait',
+    '-nw',
     '--eval',
     unpack(s_expr)
   }
